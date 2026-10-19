@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#4C33E4">
+  <title>Кабинет Арины · Кредистория</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Экран входа по паролю. Пароль проверяется по SHA-256 из auth.js -->
+  <div class="gate" id="gate">
+    <form class="gate__card" id="gateForm" autocomplete="off" novalidate>
+      <div class="logo gate__logo">
+        <span class="logo__mark" aria-hidden="true">К</span>
+        <span class="logo__text">Кредистория</span>
+      </div>
+      <h1 class="gate__title">Вход в прототип</h1>
+      <p class="gate__sub">Демо личного кабинета: рефинансирование. Введите пароль, который вам передали.</p>
+      <label class="gate__label" for="gatePass">Пароль</label>
+      <div class="gate__field">
+        <input type="password" id="gatePass" name="password" autocomplete="current-password" required>
+        <button type="button" class="gate__eye" id="gateEye" aria-label="Показать пароль">Показать</button>
+      </div>
+      <p class="gate__error" id="gateError" role="alert" hidden></p>
+      <label class="consent gate__remember"><input type="checkbox" id="gateRemember"> <span>Запомнить на этом устройстве на 7 дней</span></label>
+      <button class="btn btn--primary btn--lg btn--block" type="submit" id="gateSubmit">Войти</button>
+      <p class="gate__fine">Прототип с демо-данными. Реальных персональных данных здесь нет.</p>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+
+  <!-- Демо-полоса: сценарии MVP (предодобрения / запрос по API / все отказали) -->
+  <div class="demo-bar">
+    <div class="container demo-bar__in">
+      <span class="demo-bar__label">Демо · Арина</span>
+      <label class="demo-bar__scenario">
+        <span>Сценарий</span>
+        <select id="scenario">
+          <option value="pre">Есть предодобрения</option>
+          <option value="api">Без предодобрений, запрос по API</option>
+          <option value="decline">Все банки отказали</option>
+        </select>
+      </label>
+      <button class="link-btn" id="resetDemo" type="button">Сбросить</button>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="container header__in">
+      <a class="logo" href="#" aria-label="Кредистория">
+        <span class="logo__mark" aria-hidden="true">К</span>
+        <span class="logo__text">Кредистория</span>
+      </a>
+      <nav class="header__nav" aria-label="Основное меню">
+        <a href="#">Кредитная история</a>
+        <a href="#">Кредитный рейтинг</a>
+        <a href="#" class="is-active">Рефинансирование</a>
+      </nav>
+      <button class="avatar" type="button" id="profileBtn" aria-expanded="false" aria-controls="profilePanel">
+        <span class="avatar__circle">АД</span>
+        <span class="avatar__name">Арина</span>
+      </button>
+    </div>
+    <div class="profile-panel" id="profilePanel" hidden></div>
+  </header>
+
+  <nav class="subnav" aria-label="Разделы кабинета">
+    <div class="container subnav__in">
+      <a href="#save" class="is-active">Экономия</a>
+      <a href="#offers">Предложения</a>
+      <a href="#loans">Мои кредиты <b>4</b></a>
+      <a href="#load">Нагрузка</a>
+      <a href="#apps">Заявки</a>
+      <a href="#history">Кто смотрел историю <b>11</b></a>
+    </div>
+  </nav>
+
+  <main class="container main">
+
+    <!-- 1. ГЛАВНЫЙ БЛОК: сколько можно сэкономить -->
+    <section class="save" id="save" aria-labelledby="saveTitle">
+      <div class="save__top">
+        <p class="save__eyebrow" id="saveEyebrow">Арина, по вашим кредитам</p>
+        <h1 class="save__title" id="saveTitle">Можно платить меньше</h1>
+        <p class="save__source" id="saveSource"></p>
+      </div>
+
+      <div class="goal" role="radiogroup" aria-label="Цель рефинансирования" id="goalSwitch">
+        <button type="button" role="radio" class="goal__btn is-active" aria-checked="true" data-goal="pay">
+          <b>Снизить платёж</b><small>Платить меньше каждый месяц</small>
+        </button>
+        <button type="button" role="radio" class="goal__btn" aria-checked="false" data-goal="rate">
+          <b>Переплатить меньше</b><small>Ниже ставка, тот же срок</small>
+        </button>
+        <button type="button" role="radio" class="goal__btn" aria-checked="false" data-goal="cash">
+          <b>Получить деньги</b><small>Закрыть кредиты и взять сверху</small>
+        </button>
+      </div>
+
+      <div class="save__grid">
+        <div class="save__controls card">
+          <div class="field">
+            <div class="field__row">
+              <span class="field__label">Какие кредиты объединить</span>
+              <span class="muted" id="pickedSum"></span>
+            </div>
+            <ul class="pick" id="loanPick"></ul>
+          </div>
+          <div class="field" id="cashField" hidden>
+            <label class="field__label" for="cashRange">Деньги сверху: <b id="cashOut"></b></label>
+            <input type="range" id="cashRange" min="0" step="50000" value="300000">
+            <div class="range-scale"><span>0 ₽</span><span id="cashMax"></span></div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="termRange">Срок нового кредита: <b id="termOut"></b></label>
+            <input type="range" id="termRange" min="12" max="60" step="3" value="60">
+            <div class="range-scale"><span>1 год</span><span>5 лет</span></div>
+          </div>
+        </div>
+
+        <div class="save__result card" id="saveResult" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- 2. Предодобрения / банки -->
+    <section class="section" id="offers" aria-labelledby="offersTitle">
+      <div class="section__head">
+        <h2 id="offersTitle" class="h2">Предложения банков</h2>
+        <span class="muted" id="offersHint"></span>
+      </div>
+      <div class="offers" id="offersList"></div>
+    </section>
+
+    <!-- 3. Кредиты: точки входа в рефинансирование -->
+    <section class="section" id="loans" aria-labelledby="loansTitle">
+      <div class="section__head">
+        <h2 id="loansTitle" class="h2">Мои кредиты</h2>
+        <span class="muted" id="loansSummary"></span>
+      </div>
+      <div class="card table-card">
+        <div class="ltable" id="loansTable" role="table" aria-label="Действующие кредиты"></div>
+      </div>
+      <details class="details card">
+        <summary>Закрытые кредиты <b class="count">2</b></summary>
+        <div class="details__body" id="closedLoans"></div>
+      </details>
+    </section>
+
+    <!-- 4. Нагрузка -->
+    <section class="section" id="load" aria-labelledby="loadTitle">
+      <div class="section__head"><h2 id="loadTitle" class="h2">Нагрузка и рейтинг</h2></div>
+      <div class="kpis" id="kpis"></div>
+      <details class="details card">
+        <summary>Подробнее о расчётах</summary>
+        <div class="details__body" id="loadDetails"></div>
+      </details>
+    </section>
+
+    <!-- 5. Заявки + история -->
+    <div class="two-col">
+      <section class="section" id="apps" aria-labelledby="appsTitle">
+        <div class="section__head"><h2 id="appsTitle" class="h2">Мои заявки</h2></div>
+        <div class="stack" id="appsList"></div>
+      </section>
+
+      <section class="section" id="history" aria-labelledby="histTitle">
+        <div class="section__head"><h2 id="histTitle" class="h2">Кто смотрел вашу историю</h2></div>
+        <div class="card hist">
+          <div class="insight" id="histInsight"></div>
+          <div class="chips chips--sm" id="histFilter" role="tablist" aria-label="Фильтр запросов">
+            <button class="chip is-active" data-f="all" role="tab" aria-selected="true">Все <b>11</b></button>
+            <button class="chip" data-f="ok" role="tab" aria-selected="false">Одобрено <b>8</b></button>
+            <button class="chip" data-f="no" role="tab" aria-selected="false">Отказ <b>3</b></button>
+          </div>
+          <ul class="timeline" id="histList"></ul>
+          <button class="btn btn--secondary btn--block" id="histMore" type="button">Показать все 11</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__in">
+      <span>© 2026 АО «ОКБ» · Кредистория</span>
+      <span>8 800 301-13-34 · бесплатно по России</span>
+    </div>
+  </footer>
+
+  <div class="sticky-cta" id="stickyCta">
+    <div>
+      <div class="sticky-cta__label" id="stickyLabel">Экономия</div>
+      <div class="sticky-cta__value" id="stickyValue"></div>
+    </div>
+    <button class="btn btn--primary" type="button" data-start>Собрать предложения</button>
+  </div>
+
+  <!-- Флоу запроса: проверка → ожидание ответов → выбор → переход к партнёру -->
+  <dialog class="sheet sheet--flow" id="flow" aria-labelledby="flowTitle">
+    <div class="sheet__body" id="flowBody"></div>
+  </dialog>
+
+  </div><!-- /#app -->
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
