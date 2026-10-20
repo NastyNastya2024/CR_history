@@ -19,6 +19,7 @@ window.startApp = function () {
   };
   const round1k = (v) => Math.round(v / 1000) * 1000;
   const pct = (v) => v.toLocaleString("ru-RU", { maximumFractionDigits: 1 }) + NB + "%";
+  const fmtPP = (v) => v.toLocaleString("ru-RU", { maximumFractionDigits: 1 }) + NB + "п.п.";
   const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 10 || h >= 20) ? b : c; };
   const termText = (m) => (m % 12 === 0 ? `${m / 12}${NB}${plural(m / 12, "год", "года", "лет")}` : `${m}${NB}мес`);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -116,14 +117,8 @@ window.startApp = function () {
     $("#saveEyebrow").textContent = `${D.client.firstName}, данные на ${todayText}`;
     if (pre) {
       $("#saveTitle").innerHTML = `Вам предодобрено <span class="nowrap">${short(total)}</span> в ${D.preapprovals.length} банках`;
-      $("#preBanks").innerHTML = D.preapprovals.map((p) => `
-        <li class="pre-bank">
-          <span class="bank-mark" style="--bank:${p.color}">${p.mark}</span>
-          <span><b>${p.bank}</b><small>до ${short(p.amount)} · ставка от ${pct(p.rate)}</small></span>
-          <span class="badge badge--ok">Предодобрено</span>
-        </li>`).join("");
-      $("#preBanks").hidden = false;
-      $("#saveSource").innerHTML = `Сумма — это сумма лимитов всех предодобрений. Взять один кредит можно в пределах лимита одного банка, максимум ${short(maxP.amount)} в ${maxP.bank}. Средняя ставка по рынку — <b>${pct(D.marketRefiRate)}</b> (${D.marketRateSource}).`;
+      $("#preBanks").hidden = true;
+      $("#saveSource").innerHTML = `Это сумма лимитов в ${D.preapprovals.length} банках — подробности в <a class="link" href="#offers">предодобренных предложениях</a> ниже. Один кредит можно взять в пределах лимита одного банка, максимум ${short(maxP.amount)} в ${maxP.bank}. Средняя ставка по рынку — <b>${pct(D.marketRefiRate)}</b> (${D.marketRateSource}).`;
     } else {
       $("#saveTitle").textContent = `Предодобрений пока нет. Узнайте условия в ${D.banks.length} банках одним запросом`;
       $("#preBanks").hidden = true;
@@ -215,25 +210,27 @@ window.startApp = function () {
     }
     if (S.picked.includes("auto")) verdict += `<p class="verdict verdict--warn">Автокредит (ставка 12,9 %) дешевле нового кредита. Объединять его стоит только ради одного платежа.</p>`;
 
-    // сравнение ставок: сейчас, рынок, предложение
-    const rates = [["Ваша средняя сейчас", c.curRate, "cur"], ["Средняя по рынку", D.marketRefiRate, "mkt"], [approx ? "Оценка для вас" : `Предодобрение ${c.r.bank}`, c.r.rate, "new"]];
-    const rmax = Math.max(...rates.map((x) => x[1])) * 1.08;
-    const rateBars = rates.map(([n, v, k]) => `
-      <div class="rb rb--${k}"><span class="rb__name">${n}</span><span class="rb__track"><span style="width:${(v / rmax) * 100}%"></span></span><span class="rb__val">ставка ${pct(v)}</span></div>`).join("");
-
     const loansLine = c.loans.map((l) => `${l.bank} ${rub(l.payment)}`).join(" + ");
     const loansBal = c.loans.map((l) => rub(l.balance)).join(" + ");
     const loansInt = c.loans.map((l) => `${l.bank} ${short(l.payment * monthsLeft(l.balance, l.rate, l.payment) - l.balance)} (ещё ${Math.round(monthsLeft(l.balance, l.rate, l.payment))} мес)`).join(", ");
 
     $("#saveResult").innerHTML = `
       <div class="res-tiles">${tiles}</div>
-      <div class="rates">
-        <p class="rates__title">Сравнение ставок (годовых)</p>
-        ${rateBars}
-        <p class="rates__note">${approx ? "Предложения банков после запроса могут быть ниже или выше средней по рынку." : `Предодобренная ставка на ${pct(D.marketRefiRate - c.r.rate)} п.п. ниже средней по рынку.`}</p>
-      </div>
+      <table class="cmp">
+        <thead><tr><th></th><th>Сейчас</th><th>После</th></tr></thead>
+        <tbody>
+          <tr><th>Платёж в месяц</th><td>${short(c.curPay)}</td><td class="is-new">${short(c.newPay)}</td></tr>
+          <tr><th>Ставка, годовых</th><td>ставка ${pct(c.curRate)}<small>средняя по ${c.loans.length} ${plural(c.loans.length, "кредиту", "кредитам", "кредитам")}</small></td><td class="is-new">ставка ${approx ? "≈" + NB : ""}${pct(c.r.rate)}<small>${approx ? "средняя по рынку" : "предодобрение " + c.r.bank}</small></td></tr>
+          <tr class="cmp__mkt"><th>Средняя ставка по рынку</th><td colspan="2">ставка ${pct(D.marketRefiRate)}${approx ? "" : ` · предложение ниже на ${fmtPP(D.marketRefiRate - c.r.rate)}`}</td></tr>
+          <tr><th>Срок</th><td>${Math.round(c.curMonths)}${NB}мес</td><td class="is-new">${termText(S.term)}</td></tr>
+          <tr><th>Проценты к выплате</th><td>${short(c.curInterest)}</td><td class="is-new">${short(c.refiInterest)}</td></tr>
+          ${c.extra ? `<tr><th>Деньги на руки</th><td>—</td><td class="is-new">${short(c.extra)}</td></tr>` : ""}
+          <tr><th>Кредитов</th><td>${c.loans.length}</td><td class="is-new">1</td></tr>
+          <tr><th>Нагрузка (ПДН)</th><td>${pdn}%</td><td class="is-new">${c.pdnAfter}%</td></tr>
+        </tbody>
+      </table>
       ${verdict}
-      <details class="how" open>
+      <details class="how">
         <summary>Как мы посчитали</summary>
         <ol class="how__list">
           <li><b>Сейчас платите</b> ${loansLine} = <b>${rub(c.curPay)}</b> в месяц.</li>
@@ -283,7 +280,7 @@ window.startApp = function () {
             <span class="badge badge--ok">Предодобрено</span>
           </header>
           <dl class="offer__facts">
-            <div><dt>Ставка</dt><dd>от ${pct(p.rate)}</dd><dd class="offer__mkt">рынок ${pct(D.marketRefiRate)} · <span class="pos">−${pct(D.marketRefiRate - p.rate)} п.п.</span></dd></div>
+            <div><dt>Ставка</dt><dd>от ${pct(p.rate)}</dd><dd class="offer__mkt">рынок ${pct(D.marketRefiRate)} · <span class="pos">−${fmtPP(D.marketRefiRate - p.rate)}</span></dd></div>
             <div><dt>Предодобренная сумма</dt><dd>до ${short(p.amount)}</dd></div>
           </dl>
           ${gain}
