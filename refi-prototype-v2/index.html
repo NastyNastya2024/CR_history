@@ -47,6 +47,7 @@
           <option value="decline">Все банки отказали</option>
         </select>
       </label>
+      <button class="link-btn" id="showSurvey" type="button">Показать опрос</button>
       <button class="link-btn" id="resetDemo" type="button">Сбросить</button>
     </div>
   </div>
@@ -74,10 +75,10 @@
     <div class="container subnav__in">
       <a href="#save" class="is-active">Экономия</a>
       <a href="#offers">Предложения</a>
-      <a href="#loans">Мои кредиты <b>4</b></a>
+      <a href="#loans">Мои кредиты <b id="navLoans">4</b></a>
       <a href="#load">Нагрузка</a>
       <a href="#apps">Заявки</a>
-      <a href="#history">Кто смотрел историю <b>11</b></a>
+      <a href="#history">Кто смотрел историю <b id="navHist">11</b></a>
     </div>
   </nav>
 
@@ -86,21 +87,28 @@
     <!-- 1. ГЛАВНЫЙ БЛОК: сколько можно сэкономить -->
     <section class="save" id="save" aria-labelledby="saveTitle">
       <div class="save__top">
-        <p class="save__eyebrow" id="saveEyebrow">Арина, по вашим кредитам</p>
-        <h1 class="save__title" id="saveTitle">Можно платить меньше</h1>
+        <p class="save__eyebrow" id="saveEyebrow"></p>
+        <h1 class="save__title" id="saveTitle"></h1>
+        <ul class="pre-banks" id="preBanks" aria-label="Предодобрения по банкам"></ul>
         <p class="save__source" id="saveSource"></p>
       </div>
 
-      <div class="goal" role="radiogroup" aria-label="Цель рефинансирования" id="goalSwitch">
-        <button type="button" role="radio" class="goal__btn is-active" aria-checked="true" data-goal="pay">
-          <b>Снизить платёж</b><small>Платить меньше каждый месяц</small>
-        </button>
-        <button type="button" role="radio" class="goal__btn" aria-checked="false" data-goal="rate">
-          <b>Переплатить меньше</b><small>Ниже ставка, тот же срок</small>
-        </button>
-        <button type="button" role="radio" class="goal__btn" aria-checked="false" data-goal="cash">
-          <b>Получить деньги</b><small>Закрыть кредиты и взять сверху</small>
-        </button>
+      <div class="goal-wrap">
+        <p class="goal__q" id="goalQ">Что для вас важно? Можно выбрать несколько</p>
+        <div class="goal" role="group" aria-labelledby="goalQ" id="goalSwitch">
+          <button type="button" class="goal__btn is-active" aria-pressed="true" data-goal="pay">
+            <span class="goal__check" aria-hidden="true"></span>
+            <span><b>Меньше платёж</b><small>Платить меньше каждый месяц</small></span>
+          </button>
+          <button type="button" class="goal__btn" aria-pressed="false" data-goal="rate">
+            <span class="goal__check" aria-hidden="true"></span>
+            <span><b>Ниже ставка</b><small>Переплатить меньше за весь срок</small></span>
+          </button>
+          <button type="button" class="goal__btn" aria-pressed="false" data-goal="cash">
+            <span class="goal__check" aria-hidden="true"></span>
+            <span><b>Больше денег</b><small>Закрыть кредиты и взять сверху</small></span>
+          </button>
+        </div>
       </div>
 
       <div class="save__grid">
@@ -118,7 +126,7 @@
             <div class="range-scale"><span>0 ₽</span><span id="cashMax"></span></div>
           </div>
           <div class="field">
-            <label class="field__label" for="termRange">Срок нового кредита: <b id="termOut"></b></label>
+            <label class="field__label" for="termRange">Срок нового кредита: <b id="termOut"></b> <span class="term-hint" id="termHint"></span></label>
             <input type="range" id="termRange" min="12" max="60" step="3" value="60">
             <div class="range-scale"><span>1 год</span><span>5 лет</span></div>
           </div>
@@ -128,10 +136,13 @@
       </div>
     </section>
 
+    <!-- Ненавязчивый опрос: кредит в банке, который клиент смотрел у нас, но оформил не по нашей ссылке -->
+    <aside class="survey card" id="survey" aria-labelledby="surveyTitle" hidden></aside>
+
     <!-- 2. Предодобрения / банки -->
     <section class="section" id="offers" aria-labelledby="offersTitle">
       <div class="section__head">
-        <h2 id="offersTitle" class="h2">Предложения банков</h2>
+        <h2 id="offersTitle" class="h2">Предодобренные предложения</h2>
         <span class="muted" id="offersHint"></span>
       </div>
       <div class="offers" id="offersList"></div>
@@ -174,12 +185,12 @@
         <div class="card hist">
           <div class="insight" id="histInsight"></div>
           <div class="chips chips--sm" id="histFilter" role="tablist" aria-label="Фильтр запросов">
-            <button class="chip is-active" data-f="all" role="tab" aria-selected="true">Все <b>11</b></button>
-            <button class="chip" data-f="ok" role="tab" aria-selected="false">Одобрено <b>8</b></button>
-            <button class="chip" data-f="no" role="tab" aria-selected="false">Отказ <b>3</b></button>
+            <button class="chip is-active" data-f="all" role="tab" aria-selected="true">Все <b id="hcAll"></b></button>
+            <button class="chip" data-f="ok" role="tab" aria-selected="false">Одобрено <b id="hcOk"></b></button>
+            <button class="chip" data-f="no" role="tab" aria-selected="false">Отказ <b id="hcNo"></b></button>
           </div>
           <ul class="timeline" id="histList"></ul>
-          <button class="btn btn--secondary btn--block" id="histMore" type="button">Показать все 11</button>
+          <button class="btn btn--secondary btn--block" id="histMore" type="button">Показать все</button>
         </div>
       </section>
     </div>

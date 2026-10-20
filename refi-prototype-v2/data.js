@@ -27,6 +27,8 @@ window.DEMO = {
       refiNote: "Ставка ниже рыночной. Включайте, только чтобы объединить платежи" },
     { id: "mort",  kind: "Ипотека",         bank: "ВТБ",        opened: "05.07.2023", original: 4000000, balance: 3715000, rate: 8.5,  payment: 35000, refi: "no",
       refiNote: "Ставка 8,5 % — ниже любого предложения" },
+    { id: "alfacard", kind: "Кредитная карта", bank: "Альфа-Банк", opened: "17.10.2026", original: 150000, balance: 0, rate: 0, payment: 0, limit: 150000, refi: "no",
+      refiNote: "Долга нет" },
     { id: "card",  kind: "Кредитная карта", bank: "Открытие",   opened: "05.02.2025", original: 30000,   balance: 0,       rate: 0,    payment: 0, limit: 30000, refi: "no",
       refiNote: "Долга нет" }
   ],
@@ -36,7 +38,8 @@ window.DEMO = {
   ],
   overpayment: { total: 5820000, paid: 2290000, left: 3520000, pctOfOriginal: 80, interestShareNow: 59 },
   keyRateCb: 14.5,
-  marketRefiRate: 17.5,        // средняя ставка рефинансирования, если предодобрений нет
+  marketRefiRate: 17.5,        // средняя ставка рефинансирования по рынку (по выданным кредитам)
+  marketRateSource: "средняя ставка рефинансирования по выданным кредитам, октябрь 2026",
   maxExtraCash: 450000,
 
   // Предодобрения (сценарий «есть предодобрения»)
@@ -56,12 +59,20 @@ window.DEMO = {
     { id: "tbank",  bank: "Т-Банк",      mark: "Т", color: "#2B2D33", rate: 18.9, delay: 6200 }
   ],
 
+  // Атрибуция: клиент смотрел предложение банка у нас, а кредит в КИ появился без перехода по нашей ссылке
+  attribution: {
+    id: "alfa-card-2026-10-17",
+    bank: "Альфа-Банк", bankIn: "Альфа-Банке", product: "кредитную карту", productShort: "Кредитная карта", limit: 150000,
+    issued: "17 октября", viewed: "16 октября", viewedWhat: "предложения Альфа-Банка"
+  },
+
   applications: [
     { bank: "Т-Банк", product: "Кредитная карта Platinum", sent: "12.10.2026",
       steps: ["Отправлена", "Банк проверяет", "Решение", "Получение"], current: 1, eta: "до 17 октября" }
   ],
 
   requests: [
+    { date: "17.10.2026", bank: "Альфа-Банк",     product: "Кредитная карта",   detail: "Лимит 150 000 ₽", ok: true },
     { date: "15.12.2025", bank: "СберБанк",       product: "Рефинансирование",  detail: "Предодобрено, не использовано", ok: true },
     { date: "22.10.2025", bank: "ВТБ",            product: "Кредит наличными",  detail: "Причина: высокая долговая нагрузка", ok: false },
     { date: "05.08.2025", bank: "Т-Банк",         product: "Кредитная линия",   detail: "", ok: false },
